@@ -10,7 +10,7 @@
 //! use std::time::Duration;
 //! use nonblock::NonBlockingReader;
 //!
-//! let mut child = Command::new("some-exectuable")
+//! let mut child = Command::new("some-executable")
 //!                         .stdout(Stdio::piped())
 //!                         .spawn().unwrap();
 //! let stdout = child.stdout.take().unwrap();
