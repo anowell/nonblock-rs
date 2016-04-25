@@ -1,0 +1,11 @@
+[package]
+name = "nonblock"
+version = "0.1.0"
+authors = ["Anthony Nowell <anowell@gmail.com>"]
+
+[dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+chrono = { version = "0.2", features = ["serde"] }
+serde_json = "0.7"
