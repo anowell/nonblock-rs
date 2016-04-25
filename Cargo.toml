@@ -3,6 +3,12 @@ name = "nonblock"
 version = "0.1.0"
 authors = ["Anthony Nowell <anowell@gmail.com>"]
 
+documentation = "http://anowell.github.io/nonblock-rs/nonblock/"
+repository = "https://github.com/anowell/nonblock-rs"
+license = "MIT"
+
+keywords = ["nonblocking", "O_NONBLOCK", "reader"]
+
 [dependencies]
 libc = "0.2"
 
