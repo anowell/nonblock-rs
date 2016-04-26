@@ -46,7 +46,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-8' class='srclink' href='../src/nonblock/src/lib.rs.html#29-32' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-8' class='srclink' href='../src/nonblock/src/lib.rs.html#30-33' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct NonBlockingReader&lt;R: <a class='trait' href='https://doc.rust-lang.org/nightly/std/sys/ext/io/trait.AsRawFd.html' title='std::sys::ext::io::AsRawFd'>AsRawFd</a> + <a class='trait' href='https://doc.rust-lang.org/nightly/std/io/trait.Read.html' title='std::io::Read'>Read</a>&gt; {
     // some fields omitted
 }</pre><div class='docblock'><p>Simple non-blocking wrapper for reader types that implement AsRawFd</p>
@@ -57,7 +57,7 @@
   and O_NONBLOCK will be set the file descriptor.</p>
 </div><h4 id='method.into_blocking' class='method'><code>fn <a href='#method.into_blocking' class='fnname'>into_blocking</a>(self) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;R&gt;</code></h4>
 <div class='docblock'><p>Consume this NonBlockingReader and return the blocking version
-  of the interanally managed reader.</p>
+  of the internally managed reader.</p>
 
 <p>This will disable O_NONBLOCK on the file descriptor,
   and any data read from the NonBlockingReader before calling <code>into_blocking</code>
@@ -77,22 +77,41 @@
  Call <code>is_eof()</code> after this method to determine if EOF was reached.</p>
 
 <h2 id='errors' class='section-header'><a href='#errors'>Errors</a></h2>
-<p>If this function encounters an error of the kind ErrorKind::Interrupted
+<p>If this function encounters an error of the kind <code>ErrorKind::Interrupted</code>
   then the error is ignored and the operation will continue.
-  If it encounters ErrorKind::WouldBlock, then this function immediately returns
+  If it encounters <code>ErrorKind::WouldBlock</code>, then this function immediately returns
   the total number of bytes read so far.</p>
 
 <p>If any other read error is encountered then this function immediately returns.
   Any bytes which have already been read will be appended to buf.</p>
+
+<h2 id='examples' class='section-header'><a href='#examples'>Examples</a></h2>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>TcpStream</span>::<span class='ident'>connect</span>(<span class='string'>&quot;127.0.0.1:34567&quot;</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>noblock_stdout</span> <span class='op'>=</span> <span class='ident'>NonBlockingReader</span>::<span class='ident'>from_fd</span>(<span class='ident'>client</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buf</span> <span class='op'>=</span> <span class='ident'>Vec</span>::<span class='ident'>new</span>();
+<span class='ident'>noblock_stdout</span>.<span class='ident'>read_available</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>buf</span>).<span class='ident'>unwrap</span>();</pre>
 </div><h4 id='method.read_available_to_string' class='method'><code>fn <a href='#method.read_available_to_string' class='fnname'>read_available_to_string</a>(&amp;mut self, buf: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>&gt;</code></h4>
 <div class='docblock'><p>Reads any available data from the reader without blocking, placing them into <code>buf</code>.</p>
 
 <p>If successful, this function returns the number of bytes which were read and appended to buf.</p>
 
-<p>This function calls <code>read_available()</code> and attempts to convert the data read to a UTF-8 string.
-  If the any data read is parsed successfully as a UTF-8 string  it is appended to <code>buf</code>.
-  If it cannot be parsed as UTF-8, then <code>buf</code> will remain unmodified, returning <code>ErrorKind::InvalidData</code>
+<h2 id='errors-1' class='section-header'><a href='#errors-1'>Errors</a></h2>
+<p>This function inherits all the possible errors of <code>read_available()</code>.
+  In the case of errors that occur after successfully reading some data,
+  the successfully read data will still be parsed and appended to <code>buf</code>.</p>
+
+<p>Additionally, if the read data cannot be parsed as UTF-8,
+  then <code>buf</code> will remain unmodified, and this method will return <code>ErrorKind::InvalidData</code>
   with the <code>FromUtf8Error</code> containing any data that was read.</p>
+
+<h2 id='examples-1' class='section-header'><a href='#examples-1'>Examples</a></h2>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>child</span> <span class='op'>=</span> <span class='ident'>Command</span>::<span class='ident'>new</span>(<span class='string'>&quot;foo&quot;</span>).<span class='ident'>stdout</span>(<span class='ident'>Stdio</span>::<span class='ident'>piped</span>()).<span class='ident'>spawn</span>().<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='ident'>stdout</span> <span class='op'>=</span> <span class='ident'>child</span>.<span class='ident'>stdout</span>.<span class='ident'>take</span>().<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>noblock_stdout</span> <span class='op'>=</span> <span class='ident'>NonBlockingReader</span>::<span class='ident'>from_fd</span>(<span class='ident'>stdout</span>).<span class='ident'>unwrap</span>();
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buf</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>new</span>();
+<span class='ident'>noblock_stdout</span>.<span class='ident'>read_available_to_string</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>buf</span>).<span class='ident'>unwrap</span>();</pre>
 
 <p>In theory, since this function only reads immediately available data,
   There may not be any guarantee that the data immediately available ends

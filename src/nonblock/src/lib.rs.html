@@ -241,6 +241,40 @@
 <span id="198">198</span>
 <span id="199">199</span>
 <span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Read available data from file descriptors without blocking</span>
 <span class='doccomment'>//!</span>
@@ -264,6 +298,7 @@
 <span class='doccomment'>//!     noblock_stdout.read_available_to_string(&amp;mut buf).unwrap();</span>
 <span class='doccomment'>//!     std::thread::sleep(Duration::from_secs(5));</span>
 <span class='doccomment'>//! }</span>
+<span class='doccomment'>//! ```</span>
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>libc</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>os</span>::<span class='ident'>unix</span>::<span class='ident'>io</span>::{<span class='ident'>RawFd</span>, <span class='ident'>AsRawFd</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::{<span class='self'>self</span>, <span class='ident'>Read</span>, <span class='ident'>ErrorKind</span>};
@@ -290,7 +325,7 @@
     }
 
     <span class='doccomment'>/// Consume this NonBlockingReader and return the blocking version</span>
-    <span class='doccomment'>///   of the interanally managed reader.</span>
+    <span class='doccomment'>///   of the internally managed reader.</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// This will disable O_NONBLOCK on the file descriptor,</span>
     <span class='doccomment'>///   and any data read from the NonBlockingReader before calling `into_blocking`</span>
@@ -319,13 +354,27 @@
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ## Errors</span>
     <span class='doccomment'>///</span>
-    <span class='doccomment'>/// If this function encounters an error of the kind ErrorKind::Interrupted</span>
+    <span class='doccomment'>/// If this function encounters an error of the kind `ErrorKind::Interrupted`</span>
     <span class='doccomment'>///   then the error is ignored and the operation will continue.</span>
-    <span class='doccomment'>///   If it encounters ErrorKind::WouldBlock, then this function immediately returns</span>
+    <span class='doccomment'>///   If it encounters `ErrorKind::WouldBlock`, then this function immediately returns</span>
     <span class='doccomment'>///   the total number of bytes read so far.</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// If any other read error is encountered then this function immediately returns.</span>
     <span class='doccomment'>///   Any bytes which have already been read will be appended to buf.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// ## Examples</span>
+    <span class='doccomment'>/// ```no_run</span>
+    <span class='doccomment'>/// # use std::io::Read;</span>
+    <span class='doccomment'>/// # use std::net::TcpStream;</span>
+    <span class='doccomment'>/// # use std::time::Duration;</span>
+    <span class='doccomment'>/// # use nonblock::NonBlockingReader;</span>
+    <span class='doccomment'>/// #</span>
+    <span class='doccomment'>/// let client = TcpStream::connect(&quot;127.0.0.1:34567&quot;).unwrap();</span>
+    <span class='doccomment'>/// let mut noblock_stdout = NonBlockingReader::from_fd(client).unwrap();</span>
+    <span class='doccomment'>/// let mut buf = Vec::new();</span>
+    <span class='doccomment'>/// noblock_stdout.read_available(&amp;mut buf).unwrap();</span>
+    <span class='doccomment'>/// ```</span>
+
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>read_available</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>buf</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>) <span class='op'>-&gt;</span> <span class='ident'>io</span>::<span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>usize</span><span class='op'>&gt;</span> {
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>buf_len</span> <span class='op'>=</span> <span class='number'>0</span>;
         <span class='kw'>loop</span> {
@@ -361,10 +410,29 @@
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// If successful, this function returns the number of bytes which were read and appended to buf.</span>
     <span class='doccomment'>///</span>
-    <span class='doccomment'>/// This function calls `read_available()` and attempts to convert the data read to a UTF-8 string.</span>
-    <span class='doccomment'>///   If the any data read is parsed successfully as a UTF-8 string  it is appended to `buf`.</span>
-    <span class='doccomment'>///   If it cannot be parsed as UTF-8, then `buf` will remain unmodified, returning `ErrorKind::InvalidData`</span>
+    <span class='doccomment'>/// ## Errors</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// This function inherits all the possible errors of `read_available()`.</span>
+    <span class='doccomment'>///   In the case of errors that occur after successfully reading some data,</span>
+    <span class='doccomment'>///   the successfully read data will still be parsed and appended to `buf`.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// Additionally, if the read data cannot be parsed as UTF-8,</span>
+    <span class='doccomment'>///   then `buf` will remain unmodified, and this method will return `ErrorKind::InvalidData`</span>
     <span class='doccomment'>///   with the `FromUtf8Error` containing any data that was read.</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// ## Examples</span>
+    <span class='doccomment'>/// ```no_run</span>
+    <span class='doccomment'>/// # use std::io::Read;</span>
+    <span class='doccomment'>/// # use std::process::{Command, Stdio};</span>
+    <span class='doccomment'>/// # use std::time::Duration;</span>
+    <span class='doccomment'>/// # use nonblock::NonBlockingReader;</span>
+    <span class='doccomment'>/// #</span>
+    <span class='doccomment'>/// let mut child = Command::new(&quot;foo&quot;).stdout(Stdio::piped()).spawn().unwrap();</span>
+    <span class='doccomment'>/// let stdout = child.stdout.take().unwrap();</span>
+    <span class='doccomment'>/// let mut noblock_stdout = NonBlockingReader::from_fd(stdout).unwrap();</span>
+    <span class='doccomment'>/// let mut buf = String::new();</span>
+    <span class='doccomment'>/// noblock_stdout.read_available_to_string(&amp;mut buf).unwrap();</span>
+    <span class='doccomment'>/// ```</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// In theory, since this function only reads immediately available data,</span>
     <span class='doccomment'>///   There may not be any guarantee that the data immediately available ends</span>
@@ -420,7 +488,7 @@
 
     <span class='attribute'>#[<span class='ident'>test</span>]</span>
     <span class='kw'>fn</span> <span class='ident'>it_works</span>() {
-        <span class='kw'>let</span> <span class='ident'>server</span> <span class='op'>=</span> <span class='ident'>TcpListener</span>::<span class='ident'>bind</span>(<span class='string'>&quot;127.0.0.1:34254&quot;</span>).<span class='ident'>unwrap</span>();
+        <span class='kw'>let</span> <span class='ident'>server</span> <span class='op'>=</span> <span class='ident'>TcpListener</span>::<span class='ident'>bind</span>(<span class='string'>&quot;127.0.0.1:34567&quot;</span>).<span class='ident'>unwrap</span>();
         <span class='kw'>let</span> (<span class='ident'>tx</span>, <span class='ident'>rx</span>) <span class='op'>=</span> <span class='ident'>channel</span>();
 
         <span class='ident'>thread</span>::<span class='ident'>spawn</span>(<span class='kw'>move</span> <span class='op'>||</span> {
@@ -428,7 +496,7 @@
             <span class='ident'>tx</span>.<span class='ident'>send</span>(<span class='ident'>stream</span>).<span class='ident'>unwrap</span>();
         });
 
-        <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>TcpStream</span>::<span class='ident'>connect</span>(<span class='string'>&quot;127.0.0.1:34254&quot;</span>).<span class='ident'>unwrap</span>();;
+        <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>TcpStream</span>::<span class='ident'>connect</span>(<span class='string'>&quot;127.0.0.1:34567&quot;</span>).<span class='ident'>unwrap</span>();
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>stream</span> <span class='op'>=</span> <span class='ident'>rx</span>.<span class='ident'>recv</span>().<span class='ident'>unwrap</span>();
 
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>nonblocking</span> <span class='op'>=</span> <span class='ident'>NonBlockingReader</span>::<span class='ident'>from_fd</span>(<span class='ident'>client</span>).<span class='ident'>unwrap</span>();
