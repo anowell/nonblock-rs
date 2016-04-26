@@ -20,6 +20,7 @@
 //!     noblock_stdout.read_available_to_string(&mut buf).unwrap();
 //!     std::thread::sleep(Duration::from_secs(5));
 //! }
+//! ```
 extern crate libc;
 use std::os::unix::io::{RawFd, AsRawFd};
 use std::io::{self, Read, ErrorKind};
@@ -46,7 +47,7 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     }
 
     /// Consume this NonBlockingReader and return the blocking version
-    ///   of the interanally managed reader.
+    ///   of the internally managed reader.
     ///
     /// This will disable O_NONBLOCK on the file descriptor,
     ///   and any data read from the NonBlockingReader before calling `into_blocking`
@@ -75,13 +76,27 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     ///
     /// ## Errors
     ///
-    /// If this function encounters an error of the kind ErrorKind::Interrupted
+    /// If this function encounters an error of the kind `ErrorKind::Interrupted`
     ///   then the error is ignored and the operation will continue.
-    ///   If it encounters ErrorKind::WouldBlock, then this function immediately returns
+    ///   If it encounters `ErrorKind::WouldBlock`, then this function immediately returns
     ///   the total number of bytes read so far.
     ///
     /// If any other read error is encountered then this function immediately returns.
     ///   Any bytes which have already been read will be appended to buf.
+    ///
+    /// ## Examples
+    /// ```no_run
+    /// # use std::io::Read;
+    /// # use std::net::TcpStream;
+    /// # use std::time::Duration;
+    /// # use nonblock::NonBlockingReader;
+    /// #
+    /// let client = TcpStream::connect("127.0.0.1:34567").unwrap();
+    /// let mut noblock_stdout = NonBlockingReader::from_fd(client).unwrap();
+    /// let mut buf = Vec::new();
+    /// noblock_stdout.read_available(&mut buf).unwrap();
+    /// ```
+
     pub fn read_available(&mut self, buf: &mut Vec<u8>) -> io::Result<usize> {
         let mut buf_len = 0;
         loop {
@@ -117,10 +132,29 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     ///
     /// If successful, this function returns the number of bytes which were read and appended to buf.
     ///
-    /// This function calls `read_available()` and attempts to convert the data read to a UTF-8 string.
-    ///   If the any data read is parsed successfully as a UTF-8 string  it is appended to `buf`.
-    ///   If it cannot be parsed as UTF-8, then `buf` will remain unmodified, returning `ErrorKind::InvalidData`
+    /// ## Errors
+    ///
+    /// This function inherits all the possible errors of `read_available()`.
+    ///   In the case of errors that occur after successfully reading some data,
+    ///   the successfully read data will still be parsed and appended to `buf`.
+    ///
+    /// Additionally, if the read data cannot be parsed as UTF-8,
+    ///   then `buf` will remain unmodified, and this method will return `ErrorKind::InvalidData`
     ///   with the `FromUtf8Error` containing any data that was read.
+    ///
+    /// ## Examples
+    /// ```no_run
+    /// # use std::io::Read;
+    /// # use std::process::{Command, Stdio};
+    /// # use std::time::Duration;
+    /// # use nonblock::NonBlockingReader;
+    /// #
+    /// let mut child = Command::new("foo").stdout(Stdio::piped()).spawn().unwrap();
+    /// let stdout = child.stdout.take().unwrap();
+    /// let mut noblock_stdout = NonBlockingReader::from_fd(stdout).unwrap();
+    /// let mut buf = String::new();
+    /// noblock_stdout.read_available_to_string(&mut buf).unwrap();
+    /// ```
     ///
     /// In theory, since this function only reads immediately available data,
     ///   There may not be any guarantee that the data immediately available ends
@@ -176,7 +210,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let server = TcpListener::bind("127.0.0.1:34254").unwrap();
+        let server = TcpListener::bind("127.0.0.1:34567").unwrap();
         let (tx, rx) = channel();
 
         thread::spawn(move || {
@@ -184,7 +218,7 @@ mod tests {
             tx.send(stream).unwrap();
         });
 
-        let client = TcpStream::connect("127.0.0.1:34254").unwrap();;
+        let client = TcpStream::connect("127.0.0.1:34567").unwrap();
         let mut stream = rx.recv().unwrap();
 
         let mut nonblocking = NonBlockingReader::from_fd(client).unwrap();
