@@ -40,10 +40,7 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     pub fn from_fd(reader: R) -> io::Result<NonBlockingReader<R>> {
         let fd = reader.as_raw_fd();
         set_blocking(fd, false)?;
-        Ok(NonBlockingReader {
-            reader: reader,
-            eof: false,
-        })
+        Ok(NonBlockingReader { reader, eof: false })
     }
 
     /// Consume this NonBlockingReader and return the blocking version
