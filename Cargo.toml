@@ -6,6 +6,7 @@ description = "Read available data from file descriptors without blocking (e.g. 
 documentation = "http://anowell.github.io/nonblock-rs/nonblock/"
 repository = "https://github.com/anowell/nonblock-rs"
 license = "MIT"
+edition = "2021"
 
 keywords = ["nonblocking", "O_NONBLOCK", "reader"]
 
