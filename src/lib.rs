@@ -39,7 +39,7 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     ///   and O_NONBLOCK will be set the file descriptor.
     pub fn from_fd(reader: R) -> io::Result<NonBlockingReader<R>> {
         let fd = reader.as_raw_fd();
-        try!(set_blocking(fd, false));
+        set_blocking(fd, false)?;
         Ok(NonBlockingReader {
             reader: reader,
             eof: false,
@@ -54,7 +54,7 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     ///   will already have been consumed from the reader.
     pub fn into_blocking(self) -> io::Result<R> {
         let fd = self.reader.as_raw_fd();
-        try!(set_blocking(fd, true));
+        set_blocking(fd, true)?;
         Ok(self.reader)
     }
 
@@ -172,7 +172,7 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
             }
             Err(err) => {
                 // check for read error before returning the UTF8 Error
-                let _ = try!(res);
+                let _ = res?;
                 Err(io::Error::new(ErrorKind::InvalidData, err))
             }
         }
