@@ -222,7 +222,7 @@ mod tests {
         assert_eq!(nonblocking.read_available(&mut buf).unwrap(), 0);
         assert_eq!(buf, b"");
 
-        stream.write(b"foo").unwrap();
+        stream.write_all(b"foo").unwrap();
         assert_eq!(nonblocking.read_available(&mut buf).unwrap(), 3);
         assert_eq!(buf, b"foo");
     }
