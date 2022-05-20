@@ -22,9 +22,9 @@
 //! }
 //! ```
 extern crate libc;
-use std::os::unix::io::{RawFd, AsRawFd};
-use std::io::{self, Read, ErrorKind};
-use libc::{F_GETFL, F_SETFL, fcntl, O_NONBLOCK};
+use libc::{fcntl, F_GETFL, F_SETFL, O_NONBLOCK};
+use std::io::{self, ErrorKind, Read};
+use std::os::unix::io::{AsRawFd, RawFd};
 
 /// Simple non-blocking wrapper for reader types that implement AsRawFd
 pub struct NonBlockingReader<R: AsRawFd + Read> {
@@ -179,7 +179,6 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     }
 }
 
-
 fn set_blocking(fd: RawFd, blocking: bool) -> io::Result<()> {
     let flags = unsafe { fcntl(fd, F_GETFL, 0) };
     if flags < 0 {
@@ -199,14 +198,13 @@ fn set_blocking(fd: RawFd, blocking: bool) -> io::Result<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::NonBlockingReader;
-    use std::sync::mpsc::channel;
-    use std::net::{TcpListener, TcpStream};
-    use std::thread;
     use std::io::Write;
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::mpsc::channel;
+    use std::thread;
 
     #[test]
     fn it_works() {
