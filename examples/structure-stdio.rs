@@ -2,9 +2,9 @@ extern crate chrono;
 extern crate nonblock;
 extern crate serde_json;
 
-use chrono::UTC;
+use chrono::offset::Utc;
 use nonblock::NonBlockingReader;
-use serde_json::builder::ObjectBuilder;
+use serde_json::Value;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use std::{env, thread};
@@ -17,14 +17,16 @@ use std::{env, thread};
 //
 //   {"time":"2016-04-24T03:04:29.936957804Z","stdout":"output\nline2","stderr":"Some exception occurred"}`
 fn main() {
-    let path = env::args()
-        .nth(1)
-        .expect("Usage: structured-stdio <executable>");
-    let mut child = Command::new(&path)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn child");
+    let mut args = env::args().skip(1);
+    let path = args
+        .next()
+        .expect("Usage: structured-stdio <executable> [args...]");
+    let mut cmd = Command::new(&path);
+    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+    for arg in args {
+        cmd.arg(arg);
+    }
+    let mut child = cmd.spawn().expect("Failed to spawn child");
     let stdout = child.stdout.take().expect("Failed to open runner STDOUT");
     let stderr = child.stderr.take().expect("Failed to open runner STDERR");
 
@@ -34,7 +36,7 @@ fn main() {
         NonBlockingReader::from_fd(stderr).expect("Failed to make stderr non-blocking");
 
     loop {
-        let time = UTC::now();
+        let time = Utc::now();
         let mut stdout_now = String::new();
         let mut stderr_now = String::new();
         let _ = nb_stdout
@@ -46,17 +48,17 @@ fn main() {
 
         // Don't bother printing anything if there was no stdout/stderr
         if !stdout_now.is_empty() || !stderr_now.is_empty() {
-            let mut value = ObjectBuilder::new().insert("time", time);
+            let mut map = serde_json::Map::new();
+            map.insert("time".into(), Value::from(time.to_string()));
 
             if !stdout_now.is_empty() {
-                value = value.insert("stdout", &stdout_now);
+                map.insert("stdout".into(), Value::from(stdout_now));
             }
             if !stderr_now.is_empty() {
-                value = value.insert("stderr", &stderr_now);
+                map.insert("stderr".into(), Value::from(stderr_now));
             }
 
-            let json =
-                serde_json::ser::to_string(&value.unwrap()).expect("Failed to serialize object");
+            let json = serde_json::ser::to_string_pretty(&map).expect("Failed to serialize object");
             println!("{}", json);
         }
 
