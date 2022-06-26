@@ -22,9 +22,9 @@
 //! }
 //! ```
 extern crate libc;
-use std::os::unix::io::{RawFd, AsRawFd};
-use std::io::{self, Read, ErrorKind};
-use libc::{F_GETFL, F_SETFL, fcntl, O_NONBLOCK};
+use libc::{fcntl, F_GETFL, F_SETFL, O_NONBLOCK};
+use std::io::{self, ErrorKind, Read};
+use std::os::unix::io::{AsRawFd, RawFd};
 
 /// Simple non-blocking wrapper for reader types that implement AsRawFd
 pub struct NonBlockingReader<R: AsRawFd + Read> {
@@ -39,11 +39,8 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     ///   and O_NONBLOCK will be set the file descriptor.
     pub fn from_fd(reader: R) -> io::Result<NonBlockingReader<R>> {
         let fd = reader.as_raw_fd();
-        try!(set_blocking(fd, false));
-        Ok(NonBlockingReader {
-            reader: reader,
-            eof: false,
-        })
+        set_blocking(fd, false)?;
+        Ok(NonBlockingReader { reader, eof: false })
     }
 
     /// Consume this NonBlockingReader and return the blocking version
@@ -54,7 +51,7 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
     ///   will already have been consumed from the reader.
     pub fn into_blocking(self) -> io::Result<R> {
         let fd = self.reader.as_raw_fd();
-        try!(set_blocking(fd, true));
+        set_blocking(fd, true)?;
         Ok(self.reader)
     }
 
@@ -172,13 +169,12 @@ impl<R: AsRawFd + Read> NonBlockingReader<R> {
             }
             Err(err) => {
                 // check for read error before returning the UTF8 Error
-                let _ = try!(res);
+                let _ = res?;
                 Err(io::Error::new(ErrorKind::InvalidData, err))
             }
         }
     }
 }
-
 
 fn set_blocking(fd: RawFd, blocking: bool) -> io::Result<()> {
     let flags = unsafe { fcntl(fd, F_GETFL, 0) };
@@ -199,14 +195,13 @@ fn set_blocking(fd: RawFd, blocking: bool) -> io::Result<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::NonBlockingReader;
-    use std::sync::mpsc::channel;
-    use std::net::{TcpListener, TcpStream};
-    use std::thread;
     use std::io::Write;
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::mpsc::channel;
+    use std::thread;
 
     #[test]
     fn it_works() {
@@ -227,7 +222,7 @@ mod tests {
         assert_eq!(nonblocking.read_available(&mut buf).unwrap(), 0);
         assert_eq!(buf, b"");
 
-        stream.write(b"foo").unwrap();
+        stream.write_all(b"foo").unwrap();
         assert_eq!(nonblocking.read_available(&mut buf).unwrap(), 3);
         assert_eq!(buf, b"foo");
     }
