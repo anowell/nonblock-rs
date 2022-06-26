@@ -1,6 +1,6 @@
 [package]
 name = "nonblock"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Anthony Nowell <anowell@gmail.com>"]
 description = "Read available data from file descriptors without blocking (e.g. sockets, streams, child stdout, named pipes)"
 documentation = "http://anowell.github.io/nonblock-rs/nonblock/"
